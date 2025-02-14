@@ -24,6 +24,42 @@ Several data inconsistencies where identified, restricting proper analysis. Afte
 
 No other anomalies or missing values were recognized.
 
+## Recurrent Neural Networks: LSTM & GRU
+Long-short-term memory models are extremely powerful time-series models. Due to their architecture, they can predict an arbitrary number of steps into the future. The major factor that distinguishes them from other neural networks is their recurrent setting, which on the high level, may be perceived as training several neural networks which, working sequentially (in loops), communicate with each other on the way. The family of RNN is formed by Long Short Term Memory (LSTM) & Gated Recurrent Unit (GRU) models.
+
+We use both of them to predict feature **Price**/**Close** of Bitcoin, applying different layers, neuron units, time period predicted, training data volume, usage of several features and so on. We visualized the results plotting the actual vs predicted lines on top of each other. In general, to select the most efficient and well-adjusted model we used several metrics: **RMSE**, **MAE**, **R²**, **MSLE**, **MAPE** with special focus on **RMSE** as the simple yet insightful residual analysis method.
+
+The models we examined were:
+
+| Model Description | RMSE | MAE | R² | MSLE | MAPE |
+|------------------|------|-----|---------|------|------|
+| **Model 1 New LSTM architecture (whatever it means...) 0.8/0.2** | 4279.11 | 3399.72 | 0.9178 | 0.002309 | 19.90% |
+| **Model 2 Increased units from 125 → 256 0.8/0/2** | 4071.47 | — | — | — | — |
+| **Model 3 Default simplest model 0.8/0/2** | 4009.40 | 3428.78 | 0.9279 | 0.002376 | 20.74% |
+| **Model 4 GRU (units=256), n_steps=120, from 2016-07-09, 50 epochs** | 3803.78 | 3231.33 | 0.9351 | 0.002117 | 20.73% |
+| **Model 5 n_steps = 120** | 3127.70 | 2517.05 | 0.9561 | 0.001420 | 20.78% |
+| **Model 6 Extended training data by one year** | 3060.83 | 2381.87 | 0.9580 | 0.001235 | 20.45% |
+| **Model 7 (GRU, 50 Epochs, StandardScaler, early stopping, NO dropouts, Close, batchsize=32, n_steps=120, RMSprop)** | 2823.36 | 1452.78 | 0.9815 | 0.001752 | 61.78% |
+| **Model 8 (GRU, 50 Epochs, MinMaxScaler, early stopping, NO dropouts, Close, batchsize=32, n_steps=60, RMSprop)** | 2689.83 | 1915.69 | 0.9833 | 0.002702 | 60.97% |
+| **Model 9 (GRU, 50 Epochs, StandardScaler, early stopping, dropouts, Close, batchsize=32, n_steps=120, RMSprop)** | 2611.39 | 1865.43 | 0.9842 | 0.003290 | 63.39% |
+| **Final Model (GRU, 125 Units, 100 Epochs, MinMaxScaler, NO early stopping, NO dropouts, Close, batchsize=64, n_steps=60, RMSprop) YEARLY PREDICTIONS (2024-01-10 - 2024-12-31)** | **1903.58** | **1366.47** | **0.9827** | **0.000796** | **23.06%** |
+
+*most of these scores are saved in the file *lstm_adjustments.ipynb* on the branch *rnn_experiments*
+
+After retraining **LSTM** and **GRU** for **1000+ days predictions**, the results improved as compared to yearly predictions performed and documented above:
+**1000+ days forecast:**
+
+| Model Description | RMSE | MAE | R² | MSLE | MAPE |
+|------------------|------|-----|---------|------|------|
+|**GRU 125 Units + 50 Epochs** | 1789.62 | 1353.18 | 0.9931 | 0.001575 | 63.60% |
+|**LSTM 125 Units + 50 Epochs** | **1759.30** | **1169.44** | **0.9933** | **0.001244** | **63.61%** |
+
+In this case, LSTM performs slightly better in all key metrics, though the difference is small. Also, the computational cost between both is unobservable, providing aditional advantage to LSTM.
+
+Best (longterm forecast: 2022-02-12 - 2025-01-01) model visualization:
+
+![Alt text](images/lstm.png)
+
 ### Data Exploration
 ![Alt text](images/halving.png)
 A quick look at frequency in our data:
@@ -115,42 +151,6 @@ Moreover, we used **GARCH(1,1)** for predicting volatility using only the last y
 ![Alt text](images/garch_rolling_month.png)
 
 The rolling forecasts of volatility using the GARCH model provided a more dynamic view of how Bitcoin's volatility changes over time. It workd fine for the 'all data' and for the 'last year'. Unfortunately it does not cover with the data of the 'last month'.
-
-#### LSTM & GRU
-Long-short-term memory models are extremely powerful time-series models. Due to their architecture, they can predict an arbitrary number of steps into the future. The major factor that distinguishes them from other neural networks is their recurrent setting, which on the high level, may be perceived as training several neural networks which, working sequentially (in loops), communicate with each other on the way. The family of RNN is formed by Long Short Term Memory (LSTM) & Gated Recurrent Unit (GRU) models.
-
-We use both of them to predict feature **Price**/**Close** of Bitcoin, applying different layers, neuron units, time period predicted, training data volume, usage of several features and so on. We visualized the results plotting the actual vs predicted lines on top of each other. In general, to select the most efficient and well-adjusted model we used several metrics: **RMSE**, **MAE**, **R²**, **MSLE**, **MAPE** with special focus on **RMSE** as the simple yet insightful residual analysis method.
-
-The models we examined were:
-
-| Model Description | RMSE | MAE | R² | MSLE | MAPE |
-|------------------|------|-----|---------|------|------|
-| **Model 1 New LSTM architecture (whatever it means...) 0.8/0.2** | 4279.11 | 3399.72 | 0.9178 | 0.002309 | 19.90% |
-| **Model 2 Increased units from 125 → 256 0.8/0/2** | 4071.47 | — | — | — | — |
-| **Model 3 Default simplest model 0.8/0/2** | 4009.40 | 3428.78 | 0.9279 | 0.002376 | 20.74% |
-| **Model 4 GRU (units=256), n_steps=120, from 2016-07-09, 50 epochs** | 3803.78 | 3231.33 | 0.9351 | 0.002117 | 20.73% |
-| **Model 5 n_steps = 120** | 3127.70 | 2517.05 | 0.9561 | 0.001420 | 20.78% |
-| **Model 6 Extended training data by one year** | 3060.83 | 2381.87 | 0.9580 | 0.001235 | 20.45% |
-| **Model 7 (GRU, 50 Epochs, StandardScaler, early stopping, NO dropouts, Close, batchsize=32, n_steps=120, RMSprop)** | 2823.36 | 1452.78 | 0.9815 | 0.001752 | 61.78% |
-| **Model 8 (GRU, 50 Epochs, MinMaxScaler, early stopping, NO dropouts, Close, batchsize=32, n_steps=60, RMSprop)** | 2689.83 | 1915.69 | 0.9833 | 0.002702 | 60.97% |
-| **Model 9 (GRU, 50 Epochs, StandardScaler, early stopping, dropouts, Close, batchsize=32, n_steps=120, RMSprop)** | 2611.39 | 1865.43 | 0.9842 | 0.003290 | 63.39% |
-| **Final Model (GRU, 125 Units, 100 Epochs, MinMaxScaler, NO early stopping, NO dropouts, Close, batchsize=64, n_steps=60, RMSprop) YEARLY PREDICTIONS (2024-01-10 - 2024-12-31)** | **1903.58** | **1366.47** | **0.9827** | **0.000796** | **23.06%** |
-
-*most of these scores are saved in the file *lstm_adjustments.ipynb* on the branch *rnn_experiments*
-
-After retraining **LSTM** and **GRU** for **1000+ days predictions**, the results improved as compared to yearly predictions performed and documented above:
-**1000+ days forecast:**
-
-| Model Description | RMSE | MAE | R² | MSLE | MAPE |
-|------------------|------|-----|---------|------|------|
-|**GRU 125 Units + 50 Epochs** | 1789.62 | 1353.18 | 0.9931 | 0.001575 | 63.60% |
-|**LSTM 125 Units + 50 Epochs** | **1759.30** | **1169.44** | **0.9933** | **0.001244** | **63.61%** |
-
-In this case, LSTM performs slightly better in all key metrics, though the difference is small. Also, the computational cost between both is unobservable, providing aditional advantage to LSTM.
-
-Best (longterm forecast: 2022-02-12 - 2025-01-01) model visualization:
-
-![Alt text](images/lstm.png)
 
 #### Prophet
 
